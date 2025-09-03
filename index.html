@@ -11,7 +11,6 @@
     --muted:#a3a3a3;
     --text:#ffffff;
     --track:#262626;
-    --accent:#22c55e;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -21,43 +20,29 @@
     display:flex; flex-direction:column; gap:16px;
   }
   header{padding:24px 20px 8px}
-  h1{
-    margin:0; letter-spacing:0.15em; font-weight:800; font-size:clamp(22px,4vw,36px);
-  }
+  h1{margin:0; letter-spacing:0.15em; font-weight:800; font-size:clamp(22px,4vw,36px)}
   .sub{color:var(--muted); font-size:14px; margin-top:6px}
-  .panel{
-    background:var(--panel); border:1px solid #1f1f1f; border-radius:16px;
-    padding:16px; margin:0 20px; box-shadow:0 0 0 1px #000 inset;
-  }
+  .panel{background:var(--panel); border:1px solid #1f1f1f; border-radius:16px; padding:16px; margin:0 20px; box-shadow:0 0 0 1px #000 inset}
   label{display:block; font-size:12px; color:var(--muted); margin-bottom:8px; letter-spacing:.06em}
-  textarea{
-    width:100%; min-height:84px; resize:vertical; border-radius:12px; background:#0f0f0f; color:var(--text);
-    border:1px solid #242424; padding:12px 14px; line-height:1.4; outline:none;
-  }
+  textarea{width:100%; min-height:84px; resize:vertical; border-radius:12px; background:#0f0f0f; color:var(--text); border:1px solid #242424; padding:12px 14px; line-height:1.4; outline:none}
   textarea:focus{border-color:#3a3a3a}
   .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
-  button{
-    appearance:none; border:none; border-radius:999px; padding:10px 16px; font-weight:700; letter-spacing:.04em;
-    color:#000; background:#fff; cursor:pointer;
-  }
+  button{appearance:none; border:none; border-radius:999px; padding:10px 16px; font-weight:700; letter-spacing:.04em; color:#000; background:#fff; cursor:pointer}
   button.secondary{background:#1a1a1a; color:var(--text); border:1px solid #2a2a2a}
   button:active{transform:translateY(1px)}
   .hint{color:var(--muted); font-size:12px; margin-left:auto; align-self:center}
   .grid{display:grid; gap:18px; padding:8px 20px 24px; grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
-  .card{
-    background:var(--panel); border:1px solid #1f1f1f; border-radius:18px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:10px;
-  }
+  .card{background:var(--panel); border:1px solid #1f1f1f; border-radius:18px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:10px}
   .name{font-size:14px; color:#e5e5e5; letter-spacing:.04em}
   .percent{font-weight:800}
   .ring-wrap{position:relative; width:160px; height:160px}
   .ring-track{stroke:var(--track)}
   .ring-progress{stroke:#fff}
-  .ring-progress.green{stroke:var(--accent)}
   .ring-track, .ring-progress{fill:none; stroke-linecap:round}
-  .ring-num{position:absolute; inset:0; display:grid; place-items:center; font-size:28px}
-  .ring-num.green{color:var(--accent)}
-  footer{color:var(--muted); font-size:12px; text-align:center; padding:0 20px 24px}
-  a{color:#d4d4d4}
+  .ring-num{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 8px; font-size:20px; line-height:1.2}
+  #nozaOverlay{position:fixed; inset:0; display:grid; place-items:center; pointer-events:none; opacity:0; transition:opacity 1s ease}
+  #nozaOverlay.visible{opacity:1}
+  #nozaOverlay img{max-width:min(60vmin,520px); width:100%; height:auto; filter:drop-shadow(0 8px 24px rgba(0,0,0,.6))}
 </style>
 </head>
 <body>
@@ -75,28 +60,47 @@
     </div>
   </section>
   <section class="grid" id="results" aria-live="polite" aria-busy="false"></section>
-  <footer>
-  
-  </footer>
+  <div id="nozaOverlay">
+    <img id="nozaImg" src="assets/noza.png" alt="" />
+    <audio id="nozaAudio" src="assets/noza.mp3" preload="auto"></audio>
+  </div>
+  <footer></footer>
 <script>
 (function(){
   const input = document.getElementById('names');
   const runBtn = document.getElementById('run');
   const clearBtn = document.getElementById('clear');
   const grid = document.getElementById('results');
-  const SPECIAL = new Set(['tamaz','david','andria']);
+  const overlay = document.getElementById('nozaOverlay');
+  const nozaAudio = document.getElementById('nozaAudio');
+
   function parseNames(raw){
-    return raw
-      .split(/[\n,]+/)
-      .map(s => s.trim())
-      .filter(Boolean);
+    return raw.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
   }
-  function targetFor(name){
-    const key = name.trim().toLowerCase();
-    if (SPECIAL.has(key)) return { value: 100, green: true };
-    const val = Math.max(1, Math.min(99, Math.floor(Math.random()*100)));
-    return { value: val, green: false };
+
+  function randInt(min, max){
+    return Math.floor(Math.random()*(max-min+1))+min;
   }
+
+  function specFor(name){
+    const k = name.trim().toLowerCase();
+    if (k === 'tazo' || k === 'giga' || k === 'gigaia') return { percent: 100 };
+    if (k === 'mari') return { min: 20, max: 30 };
+    if (k === 'andria') return { min: 89, max: 100 };
+    if (k === 'nina') return { min: 80, max: 100 };
+    if (k === 'ana') return { min: 1, max: 30 };
+    if (k === 'dachi') return { percent: 100, unauthorized: true };
+    return { min: 1, max: 100 };
+  }
+
+  function colorFor(p){
+    if (p >= 10 && p <= 25) return { stroke:'#ef4444', text:'#ef4444' };
+    if (p > 25 && p <= 50) return { stroke:'#eab308', text:'#eab308' };
+    if (p > 50 && p <= 75) return { stroke:'#22c55e', text:'#22c55e' };
+    if (p > 75 && p <= 100) return { stroke:'#38bdf8', text:'#38bdf8' };
+    return { stroke:'#ffffff', text:'#ffffff' };
+  }
+
   function ringSVG(size){
     const stroke = 12;
     const r = (size - stroke) / 2;
@@ -121,16 +125,18 @@
     svg.append(track, prog);
     return { svg, prog, c };
   }
-  function animateCard({ name, percent, green }){
+
+  function animateCard({ name, percent, color, labelOverride }){
     const card = document.createElement('div');
     card.className = 'card';
     const wrap = document.createElement('div');
     wrap.className = 'ring-wrap';
     const { svg, prog, c } = ringSVG(160);
-    if (green) prog.classList.add('green');
+    prog.style.stroke = color.stroke;
     const num = document.createElement('div');
-    num.className = 'ring-num' + (green ? ' green' : '');
-    num.innerHTML = `<span class="percent">0%</span>`;
+    num.className = 'ring-num';
+    num.style.color = color.text;
+    num.innerHTML = `<span class=\"percent\">${labelOverride ? labelOverride : '0%'}<\/span>`;
     wrap.append(svg, num);
     const label = document.createElement('div');
     label.className = 'name';
@@ -140,28 +146,45 @@
     requestAnimationFrame(()=>{
       const targetOffset = c * (1 - percent/100);
       prog.style.strokeDashoffset = String(targetOffset);
-      const start = performance.now();
-      const dur = 1000;
-      function tick(t){
-        const p = Math.min(1, (t - start)/dur);
-        const val = Math.round(p * percent);
-        num.querySelector('.percent').textContent = val + '%';
-        if (p < 1) requestAnimationFrame(tick);
+      if (!labelOverride){
+        const start = performance.now();
+        const dur = 1000;
+        function tick(t){
+          const p = Math.min(1, (t - start)/dur);
+          const val = Math.round(p * percent);
+          num.querySelector('.percent').textContent = val + '%';
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
       }
-      requestAnimationFrame(tick);
     });
   }
+
+  function triggerNoza(names){
+    const has = names.some(n=>{ const k=n.toLowerCase(); return k.includes('nozadze') || k === 'noza'; });
+    if (!has) return;
+    overlay.classList.add('visible');
+    try{ nozaAudio.currentTime = 0; nozaAudio.play(); }catch(e){}
+    setTimeout(()=>{ overlay.classList.remove('visible'); }, 2000);
+  }
+
   function run(){
     grid.setAttribute('aria-busy','true');
     grid.innerHTML='';
     const names = parseNames(input.value);
     if (names.length === 0){ grid.setAttribute('aria-busy','false'); return; }
+    triggerNoza(names);
     names.forEach(n => {
-      const t = targetFor(n);
-      animateCard({ name: n, percent: t.value, green: t.green });
+      const spec = specFor(n);
+      let percent = typeof spec.percent === 'number' ? spec.percent : randInt(spec.min, spec.max);
+      if (percent < 0) percent = 0; if (percent > 100) percent = 100;
+      const color = spec.unauthorized ? { stroke:'#ef4444', text:'#ef4444' } : colorFor(percent);
+      const labelOverride = spec.unauthorized ? 'Dachi is not authorized' : null;
+      animateCard({ name: n, percent, color, labelOverride });
     });
     grid.setAttribute('aria-busy','false');
   }
+
   runBtn.addEventListener('click', run);
   clearBtn.addEventListener('click', ()=>{ input.value=''; grid.innerHTML=''; input.focus(); });
   input.addEventListener('keydown', (e)=>{
