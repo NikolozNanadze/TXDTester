@@ -40,9 +40,8 @@
   .ring-progress{stroke:#fff}
   .ring-track, .ring-progress{fill:none; stroke-linecap:round}
   .ring-num{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 8px; font-size:20px; line-height:1.2}
-  #nozaOverlay{position:fixed; inset:0; display:grid; place-items:center; pointer-events:none; opacity:0; transition:opacity 1s ease}
-  #nozaOverlay.visible{opacity:1}
-  #nozaOverlay img{max-width:min(60vmin,520px); width:100%; height:auto; filter:drop-shadow(0 8px 24px rgba(0,0,0,.6))}
+  footer{color:var(--muted); font-size:12px; text-align:center; padding:0 20px 24px}
+  a{color:#d4d4d4}
 </style>
 </head>
 <body>
@@ -54,16 +53,12 @@
     <label for="names">NAMES (comma or new line separated)</label>
     <textarea id="names"></textarea>
     <div class="actions">
-      <button id="run" type="button">RUN TEST</button>
+      <button id="run">RUN TEST</button>
       <button id="clear" class="secondary">CLEAR</button>
       <div class="hint">Tip: Press <kbd>Enter</kbd> to run • <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line</div>
     </div>
   </section>
   <section class="grid" id="results" aria-live="polite" aria-busy="false"></section>
-  <div id="nozaOverlay">
-    <img id="nozaImg" src="assets/noza.png" alt="" />
-    <audio id="nozaAudio" src="assets/noza.mp3" preload="auto"></audio>
-  </div>
   <footer></footer>
 <script>
 (function(){
@@ -71,12 +66,9 @@
   const runBtn = document.getElementById('run');
   const clearBtn = document.getElementById('clear');
   const grid = document.getElementById('results');
-  const overlay = document.getElementById('nozaOverlay');
-  const nozaAudio = document.getElementById('nozaAudio');
 
   function parseNames(raw){
-    return raw.split(/[
-,]+/).map(s=>s.trim()).filter(Boolean);
+    return raw.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
   }
 
   function randInt(min, max){
@@ -95,12 +87,7 @@
   }
 
   function colorFor(p){
-    if (p >= 75 && p <= 100) return { stroke:'#38bdf8', text:'#38bdf8' };
-    if (p >= 50 && p < 75) return { stroke:'#22c55e', text:'#22c55e' };
-    if (p > 25 && p < 50) return { stroke:'#eab308', text:'#eab308' };
     if (p >= 10 && p <= 25) return { stroke:'#ef4444', text:'#ef4444' };
-    return { stroke:'#ffffff', text:'#ffffff' };
-  };
     if (p > 25 && p <= 50) return { stroke:'#eab308', text:'#eab308' };
     if (p > 50 && p <= 75) return { stroke:'#22c55e', text:'#22c55e' };
     if (p > 75 && p <= 100) return { stroke:'#38bdf8', text:'#38bdf8' };
@@ -142,7 +129,7 @@
     const num = document.createElement('div');
     num.className = 'ring-num';
     num.style.color = color.text;
-    num\.innerHTML = `<span class="percent">${labelOverride ? labelOverride : '0%'}<\/span>`;
+    num.innerHTML = `<span class="percent">${labelOverride ? labelOverride : '0%'}<\/span>`;
     wrap.append(svg, num);
     const label = document.createElement('div');
     label.className = 'name';
@@ -166,20 +153,11 @@
     });
   }
 
-  function triggerNoza(names){
-    const has = names.some(n=>{ const k=n.toLowerCase(); return k.includes('nozadze') || k === 'noza'; });
-    if (!has) return;
-    overlay.classList.add('visible');
-    try{ nozaAudio.currentTime = 0; nozaAudio.play(); }catch(e){}
-    setTimeout(()=>{ overlay.classList.remove('visible'); }, 2000);
-  }
-
   function run(){
     grid.setAttribute('aria-busy','true');
     grid.innerHTML='';
     const names = parseNames(input.value);
     if (names.length === 0){ grid.setAttribute('aria-busy','false'); return; }
-    triggerNoza(names);
     names.forEach(n => {
       const spec = specFor(n);
       let percent = typeof spec.percent === 'number' ? spec.percent : randInt(spec.min, spec.max);
@@ -193,14 +171,8 @@
 
   runBtn.addEventListener('click', run);
   clearBtn.addEventListener('click', ()=>{ input.value=''; grid.innerHTML=''; input.focus(); });
-  input.addEventListener('keydown',(e)=>{
+  input.addEventListener('keydown', (e)=>{
     if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); run(); }
-  });
-  input.addEventListener('keyup',(e)=>{
-    if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); run(); }
-  });
-  let to=null;
-  input.addEventListener('input',()=>{ clearTimeout(to); to=setTimeout(run,600); }); run(); }
   });
   input.value = '';
 })();
