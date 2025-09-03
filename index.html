@@ -94,7 +94,12 @@
   }
 
   function colorFor(p){
+    if (p >= 75 && p <= 100) return { stroke:'#38bdf8', text:'#38bdf8' };
+    if (p >= 50 && p < 75) return { stroke:'#22c55e', text:'#22c55e' };
+    if (p > 25 && p < 50) return { stroke:'#eab308', text:'#eab308' };
     if (p >= 10 && p <= 25) return { stroke:'#ef4444', text:'#ef4444' };
+    return { stroke:'#ffffff', text:'#ffffff' };
+  };
     if (p > 25 && p <= 50) return { stroke:'#eab308', text:'#eab308' };
     if (p > 50 && p <= 75) return { stroke:'#22c55e', text:'#22c55e' };
     if (p > 75 && p <= 100) return { stroke:'#38bdf8', text:'#38bdf8' };
@@ -136,7 +141,7 @@
     const num = document.createElement('div');
     num.className = 'ring-num';
     num.style.color = color.text;
-    num.innerHTML = `<span class=\"percent\">${labelOverride ? labelOverride : '0%'}<\/span>`;
+    num\.innerHTML = `<span class="percent">${labelOverride ? labelOverride : '0%'}<\/span>`;
     wrap.append(svg, num);
     const label = document.createElement('div');
     label.className = 'name';
