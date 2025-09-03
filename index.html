@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TXDD TESTER</title>
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --panel:#111111;
+    --muted:#a3a3a3;
+    --text:#ffffff;
+    --track:#262626;
+    --accent:#22c55e;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,"Noto Sans",Arial,sans-serif;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  header{padding:24px 20px 8px}
+  h1{
+    margin:0; letter-spacing:0.15em; font-weight:800; font-size:clamp(22px,4vw,36px);
+  }
+  .sub{color:var(--muted); font-size:14px; margin-top:6px}
+  .panel{
+    background:var(--panel); border:1px solid #1f1f1f; border-radius:16px;
+    padding:16px; margin:0 20px; box-shadow:0 0 0 1px #000 inset;
+  }
+  label{display:block; font-size:12px; color:var(--muted); margin-bottom:8px; letter-spacing:.06em}
+  textarea{
+    width:100%; min-height:84px; resize:vertical; border-radius:12px; background:#0f0f0f; color:var(--text);
+    border:1px solid #242424; padding:12px 14px; line-height:1.4; outline:none;
+  }
+  textarea:focus{border-color:#3a3a3a}
+  .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
+  button{
+    appearance:none; border:none; border-radius:999px; padding:10px 16px; font-weight:700; letter-spacing:.04em;
+    color:#000; background:#fff; cursor:pointer;
+  }
+  button.secondary{background:#1a1a1a; color:var(--text); border:1px solid #2a2a2a}
+  button:active{transform:translateY(1px)}
+  .hint{color:var(--muted); font-size:12px; margin-left:auto; align-self:center}
+  .grid{display:grid; gap:18px; padding:8px 20px 24px; grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .card{
+    background:var(--panel); border:1px solid #1f1f1f; border-radius:18px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .name{font-size:14px; color:#e5e5e5; letter-spacing:.04em}
+  .percent{font-weight:800}
+  .ring-wrap{position:relative; width:160px; height:160px}
+  .ring-track{stroke:var(--track)}
+  .ring-progress{stroke:#fff}
+  .ring-progress.green{stroke:var(--accent)}
+  .ring-track, .ring-progress{fill:none; stroke-linecap:round}
+  .ring-num{position:absolute; inset:0; display:grid; place-items:center; font-size:28px}
+  .ring-num.green{color:var(--accent)}
+  footer{color:var(--muted); font-size:12px; text-align:center; padding:0 20px 24px}
+  a{color:#d4d4d4}
+</style>
+</head>
+<body>
+  <header>
+    <h1>TXDD TESTER</h1>
+    <div class="sub"></div>
+  </header>
+  <section class="panel" aria-label="Input">
+    <label for="names">NAMES (comma or new line separated)</label>
+    <textarea id="names"></textarea>
+    <div class="actions">
+      <button id="run">RUN TEST</button>
+      <button id="clear" class="secondary">CLEAR</button>
+      <div class="hint">Tip: Press <kbd>Enter</kbd> to run • <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line</div>
+    </div>
+  </section>
+  <section class="grid" id="results" aria-live="polite" aria-busy="false"></section>
+  <footer>
+  
+  </footer>
+<script>
+(function(){
+  const input = document.getElementById('names');
+  const runBtn = document.getElementById('run');
+  const clearBtn = document.getElementById('clear');
+  const grid = document.getElementById('results');
+  const SPECIAL = new Set(['tamaz','david','andria']);
+  function parseNames(raw){
+    return raw
+      .split(/[\n,]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+  function targetFor(name){
+    const key = name.trim().toLowerCase();
+    if (SPECIAL.has(key)) return { value: 100, green: true };
+    const val = Math.max(1, Math.min(99, Math.floor(Math.random()*100)));
+    return { value: val, green: false };
+  }
+  function ringSVG(size){
+    const stroke = 12;
+    const r = (size - stroke) / 2;
+    const c = 2 * Math.PI * r;
+    const cx = size/2, cy = size/2;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+    const track = document.createElementNS(svgNS, 'circle');
+    track.setAttribute('cx', cx); track.setAttribute('cy', cy); track.setAttribute('r', r);
+    track.setAttribute('class', 'ring-track');
+    track.setAttribute('stroke-width', stroke);
+    const prog = document.createElementNS(svgNS, 'circle');
+    prog.setAttribute('cx', cx); prog.setAttribute('cy', cy); prog.setAttribute('r', r);
+    prog.setAttribute('class', 'ring-progress');
+    prog.setAttribute('stroke-width', stroke);
+    prog.setAttribute('stroke-dasharray', c);
+    prog.setAttribute('stroke-dashoffset', c);
+    prog.style.transition = 'stroke-dashoffset 1s ease-in-out';
+    svg.append(track, prog);
+    return { svg, prog, c };
+  }
+  function animateCard({ name, percent, green }){
+    const card = document.createElement('div');
+    card.className = 'card';
+    const wrap = document.createElement('div');
+    wrap.className = 'ring-wrap';
+    const { svg, prog, c } = ringSVG(160);
+    if (green) prog.classList.add('green');
+    const num = document.createElement('div');
+    num.className = 'ring-num' + (green ? ' green' : '');
+    num.innerHTML = `<span class="percent">0%</span>`;
+    wrap.append(svg, num);
+    const label = document.createElement('div');
+    label.className = 'name';
+    label.textContent = name;
+    card.append(wrap, label);
+    grid.append(card);
+    requestAnimationFrame(()=>{
+      const targetOffset = c * (1 - percent/100);
+      prog.style.strokeDashoffset = String(targetOffset);
+      const start = performance.now();
+      const dur = 1000;
+      function tick(t){
+        const p = Math.min(1, (t - start)/dur);
+        const val = Math.round(p * percent);
+        num.querySelector('.percent').textContent = val + '%';
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+  function run(){
+    grid.setAttribute('aria-busy','true');
+    grid.innerHTML='';
+    const names = parseNames(input.value);
+    if (names.length === 0){ grid.setAttribute('aria-busy','false'); return; }
+    names.forEach(n => {
+      const t = targetFor(n);
+      animateCard({ name: n, percent: t.value, green: t.green });
+    });
+    grid.setAttribute('aria-busy','false');
+  }
+  runBtn.addEventListener('click', run);
+  clearBtn.addEventListener('click', ()=>{ input.value=''; grid.innerHTML=''; input.focus(); });
+  input.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); run(); }
+  });
+  input.value = '';
+})();
+</script>
+</body>
+</html>
