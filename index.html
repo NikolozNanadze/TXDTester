@@ -54,7 +54,7 @@
     <label for="names">NAMES (comma or new line separated)</label>
     <textarea id="names"></textarea>
     <div class="actions">
-      <button id="run">RUN TEST</button>
+      <button id="run" type="button">RUN TEST</button>
       <button id="clear" class="secondary">CLEAR</button>
       <div class="hint">Tip: Press <kbd>Enter</kbd> to run • <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line</div>
     </div>
@@ -75,7 +75,8 @@
   const nozaAudio = document.getElementById('nozaAudio');
 
   function parseNames(raw){
-    return raw.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+    return raw.split(/[
+,]+/).map(s=>s.trim()).filter(Boolean);
   }
 
   function randInt(min, max){
@@ -192,8 +193,14 @@
 
   runBtn.addEventListener('click', run);
   clearBtn.addEventListener('click', ()=>{ input.value=''; grid.innerHTML=''; input.focus(); });
-  input.addEventListener('keydown', (e)=>{
+  input.addEventListener('keydown',(e)=>{
     if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); run(); }
+  });
+  input.addEventListener('keyup',(e)=>{
+    if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); run(); }
+  });
+  let to=null;
+  input.addEventListener('input',()=>{ clearTimeout(to); to=setTimeout(run,600); }); run(); }
   });
   input.value = '';
 })();
